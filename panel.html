@@ -24,15 +24,15 @@
 
     <div id="list-panel" class="list">
         <div class="controls" style="margin-bottom: 10px;">
-            <button class="btn btn-primary btn-xs" onclick="addItem()">Add Item</button>
-            <button class="btn btn-danger btn-xs" onclick="clearAll()">Clear All</button>
-            <button class="btn btn-default btn-xs" onclick="reloadPage()">Refresh</button>
+            <button id="add-btn" class="btn btn-primary btn-xs">Add Item</button>
+            <button id="clear-btn" class="btn btn-danger btn-xs">Clear All</button>
+            <button id="refresh-btn" class="btn btn-default btn-xs">Refresh</button>
 
             <span style="margin-left: 20px;">
-                <button class="btn btn-default btn-xs" onclick="exportToFile()">Export File</button>
-                <button class="btn btn-default btn-xs" onclick="exportToClipboard()">Export Clip</button>
-                <button class="btn btn-default btn-xs" onclick="importFromFile()">Import File</button>
-                <button class="btn btn-default btn-xs" onclick="importFromClipboard()">Import Clip</button>
+                <button id="export-file-btn" class="btn btn-default btn-xs">Export File</button>
+                <button id="export-clip-btn" class="btn btn-default btn-xs">Export Clip</button>
+                <button id="import-file-btn" class="btn btn-default btn-xs">Import File</button>
+                <button id="import-clip-btn" class="btn btn-default btn-xs">Import Clip</button>
             </span>
         </div>
 
@@ -50,8 +50,8 @@
         <textarea id="value-input" class="value form-control" placeholder="Value" style="margin-top: 5px;"></textarea>
 
         <div class="controls">
-            <button class="btn btn-primary btn-xs" onclick="saveItem()">Save</button>
-            <button class="btn btn-danger btn-xs" onclick="cancelEdit()">Cancel</button>
+            <button id="save-btn" class="btn btn-primary btn-xs">Save</button>
+            <button id="cancel-btn" class="btn btn-danger btn-xs">Cancel</button>
         </div>
     </div>
 </div>

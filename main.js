@@ -36,7 +36,7 @@ function renderTabs() {
 
         const li = document.createElement('li');
         li.className = currentType === desc.name ? 'active' : '';
-        li.onclick = () => setType(desc);
+        li.addEventListener('click', () => setType(desc));
 
         const a = document.createElement('a');
         a.style.height = '40px';
@@ -46,9 +46,9 @@ function renderTabs() {
         const m = meta[desc.name];
 
         if (desc.name === 'local' || desc.name === 'session') {
-            usageHtml = s.bytesInUse > 0 ? `${formatBytes(s.bytesInUse)} / ${formatBytes(m ? m.QUOTA_BYTES : 0)}` : 'area is empty';
+            usageHtml = s.count > 0 ? `${formatBytes(s.bytesInUse)} / ${formatBytes(m ? m.QUOTA_BYTES : 0)}` : 'area is empty';
         } else if (desc.name === 'sync') {
-            usageHtml = s.bytesInUse > 0 ? `${formatBytes(s.bytesInUse)} / ${formatBytes(m ? m.QUOTA_BYTES : 0)}, ${s.count} / ${m ? m.MAX_ITEMS : 0} items` : 'area is empty';
+            usageHtml = s.count > 0 ? `${formatBytes(s.bytesInUse)} / ${formatBytes(m ? m.QUOTA_BYTES : 0)}, ${s.count} / ${m ? m.MAX_ITEMS : 0} items` : 'area is empty';
         } else if (desc.stringOnly || desc.readonly) {
             usageHtml = s.count > 0 ? `${s.count} items` : 'area is empty';
         }
@@ -78,7 +78,7 @@ function renderResults() {
         const h3 = document.createElement('h3');
         h3.textContent = 'No Items in this area';
         noItems.appendChild(h3);
-        if (currentDescriptor.readonly) {
+        if (currentDescriptor && currentDescriptor.readonly) {
             const h4 = document.createElement('h4');
             h4.textContent = 'Managed area is always readonly.';
             noItems.appendChild(h4);
@@ -135,11 +135,11 @@ function renderResults() {
         const editBtn = document.createElement('button');
         editBtn.className = 'btn btn-default btn-xs';
         editBtn.textContent = 'Edit';
-        editBtn.onclick = () => editItem(result.name);
+        editBtn.addEventListener('click', () => editItem(result.name));
         const delBtn = document.createElement('button');
         delBtn.className = 'btn btn-danger btn-xs';
         delBtn.textContent = 'Del';
-        delBtn.onclick = () => deleteItem(result.name);
+        delBtn.addEventListener('click', () => deleteItem(result.name));
         tdActions.appendChild(editBtn);
         tdActions.appendChild(delBtn);
 
@@ -217,12 +217,20 @@ function adaptRawData() {
     results.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function calculateSize(obj) {
+    return new Blob([JSON.stringify(obj)]).size;
+}
+
 function refreshStats() {
     const storage = getStorage();
     if (!storage) return;
 
     results.slice(0, 40).forEach(result => {
         storage[currentType].getBytesInUse(result.name, function (amount) {
+            // Fallback for session storage or if API returns 0
+            if (amount === 0 && rawData[result.name] !== undefined) {
+                amount = calculateSize(rawData[result.name]);
+            }
             result.bytesInUse = amount;
             throttledRenderResults();
         });
@@ -230,15 +238,19 @@ function refreshStats() {
 
     storageDescriptors.forEach(desc => {
         const type = desc.name;
-        storage[type].getBytesInUse(function (bytes) {
-            if (!stats[type]) stats[type] = {};
-            stats[type].bytesInUse = bytes;
-            renderTabs();
-        });
         storage[type].get(function(obj){
             if (!stats[type]) stats[type] = {};
-            stats[type].count = Object.keys(obj).length;
-            renderTabs();
+            const keys = Object.keys(obj);
+            stats[type].count = keys.length;
+
+            storage[type].getBytesInUse(function (bytes) {
+                if (bytes === 0 && stats[type].count > 0) {
+                    stats[type].bytesInUse = calculateSize(obj);
+                } else {
+                    stats[type].bytesInUse = bytes;
+                }
+                renderTabs();
+            });
         });
     });
 }
@@ -383,6 +395,18 @@ function importFromClipboard() {
 
 function initApp() {
     initStorage(onStorageChanged);
+
+    // Add event listeners for static elements
+    document.getElementById('add-btn').addEventListener('click', addItem);
+    document.getElementById('clear-btn').addEventListener('click', clearAll);
+    document.getElementById('refresh-btn').addEventListener('click', reloadPage);
+    document.getElementById('export-file-btn').addEventListener('click', exportToFile);
+    document.getElementById('export-clip-btn').addEventListener('click', exportToClipboard);
+    document.getElementById('import-file-btn').addEventListener('click', importFromFile);
+    document.getElementById('import-clip-btn').addEventListener('click', importFromClipboard);
+    document.getElementById('save-btn').addEventListener('click', saveItem);
+    document.getElementById('cancel-btn').addEventListener('click', cancelEdit);
+
     appContext().then(appInfo => {
         storageDescriptors = [];
         stats = {};
