@@ -42,7 +42,7 @@ npm install
 npm test
 ```
 
-The build output will be in `build/storage-area-explorer-v1.1.0_[timestamp].zip` - ready to upload to Chrome Web Store!
+The build output will be in `build/storage-area-explorer-MV3-angular-v1.1.0_[timestamp].zip` - ready to upload to Chrome Web Store!
 
 Screen shots:
 
