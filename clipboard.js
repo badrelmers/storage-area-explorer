@@ -1,20 +1,32 @@
 const clipboard = {
-    tabId: null,
     copy: function (text) {
-        chrome.runtime.sendMessage({
-            action: 'copy',
-            params: [text],
-            tabId: this.tabId
-        });
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(err => {
+                this.fallbackCopy(text);
+            });
+        } else {
+            this.fallbackCopy(text);
+        }
+    },
+    fallbackCopy: function (text) {
+        const area = document.createElement('textarea');
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(area);
     },
     paste: function () {
-        return new Promise((resolve) => {
-            chrome.runtime.sendMessage({
-                action: 'paste',
-                tabId: this.tabId
-            }, function (result) {
-                resolve(result);
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            return navigator.clipboard.readText().catch(err => {
+                console.error('Clipboard paste failed', err);
+                return "";
             });
-        });
+        }
+        return Promise.resolve("");
     }
 };

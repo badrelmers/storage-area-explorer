@@ -204,71 +204,7 @@ function initializeExtension() {
             externalPort.disconnect();
         }
     });
-
-    chrome.runtime.onMessage.addListener(function (message, sender, response) {
-        const tabId = (sender.tab && sender.tab.id) || message.tabId;
-        if (!tabId) {
-            console.error("No tabId available for clipboard operation");
-            return;
-        }
-
-        if (message.action === 'copy') {
-            // Use chrome.scripting API to handle clipboard operations in MV3
-            chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                func: function(text) {
-                    navigator.clipboard.writeText(text).then(function() {
-                        console.log('Text copied to clipboard');
-                    }).catch(function(err) {
-                        console.error('Could not copy text: ', err);
-                        // Fallback to legacy method
-                        var area = document.createElement('textarea');
-                        area.value = text;
-                        document.body.appendChild(area);
-                        area.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(area);
-                    });
-                },
-                args: [message.params[0]]
-            });
-            response && response();
-            return;
-        }
-        if (message.action === 'paste') {
-            // Use chrome.scripting API to handle clipboard operations in MV3
-            chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                func: function() {
-                    return navigator.clipboard.readText().catch(function(err) {
-                        console.error('Could not read clipboard: ', err);
-                        // Fallback to legacy method
-                        var area = document.createElement('textarea');
-                        document.body.appendChild(area);
-                        area.select();
-                        document.execCommand('paste');
-                        var value = area.value;
-                        document.body.removeChild(area);
-                        return value;
-                    });
-                }
-            }, function(results) {
-                if (chrome.runtime.lastError) {
-                    console.error("Paste error:", chrome.runtime.lastError);
-                    response && response("");
-                } else if (results && results[0]) {
-                    response && response(results[0].result);
-                } else {
-                    response && response("");
-                }
-            });
-            return true; // Indicates we will call response asynchronously
-        }
-    });
 }
 
 // Initialize the extension when the service worker starts
 initializeExtension();
-
-
-
