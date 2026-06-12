@@ -40,9 +40,12 @@ function findPort(ports, app, tab) {
 }
 
 function putPort(ports, app, tab, port) {
-    if (findPort(ports, app, tab)) {
-        throw new Error("Such port already exist");
+    const existingPort = findPort(ports, app, tab);
+    if (existingPort) {
+        try { existingPort.disconnect(); } catch(e) {}
+        removePort(ports, app, tab);
     }
+
     if (app && tab) {
         ports.app.tab.ports[app + "_" + tab] = port;
         return;
@@ -55,24 +58,21 @@ function putPort(ports, app, tab, port) {
         ports.app.ports[app] = port;
         return;
     }
-    throw new Error("Can't put port without app or tab");
 }
 
 function removePort(ports, app, tab) {
-    if (!findPort(ports, app, tab)) {
-        return;
+    const port = findPort(ports, app, tab);
+    if (!port) {
+        return null;
     }
     if (app && tab) {
         delete ports.app.tab.ports[app + "_" + tab];
-        return;
-    }
-    if (tab) {
+    } else if (tab) {
         delete ports.tab.ports[tab];
-        return;
-    }
-    if (app) {
+    } else if (app) {
         delete ports.app.ports[app];
     }
+    return port;
 }
 
 PortManager.prototype.getUiPort = function (app, tab) {
@@ -86,16 +86,12 @@ PortManager.prototype.getTargetPort = function (app, tab) {
 
 PortManager.prototype.onPortDisconnected = function (app, tab, disconnectedPort) {
     console.log("Disconnecting ports for " + app + ":" + tab);
-    var removePort2 = removePort(this.uiPorts, app, tab);
-    var removePort1 = removePort(this.targetPorts, app, tab);
-    [removePort1, removePort2].forEach(function (port) {
-        if (!port) {
-            return;
+    var p1 = removePort(this.uiPorts, app, tab);
+    var p2 = removePort(this.targetPorts, app, tab);
+    [p1, p2].forEach(function (port) {
+        if (port && port !== disconnectedPort) {
+            try { port.disconnect(); } catch(e) {}
         }
-        if (port == disconnectedPort) {
-            return;
-        }
-        port.disconnect();
     });
 };
 
@@ -104,61 +100,46 @@ PortManager.prototype.trackUiPort = function (app, tab, port) {
     console.log("Trying to track ui port for app " + app + " and tab " + tab);
     putPort(this.uiPorts, app, tab, port);
     port.onDisconnect.addListener(function () {
-        removePort(self.uiPorts, app, tab);
-        var targetPort = findPort(self.targetPorts, app, tab);
-        if (targetPort) {
-            targetPort.disconnect();
-            self.onPortDisconnected(app, tab, targetPort);
+        const removed = removePort(self.uiPorts, app, tab);
+        if (removed) {
+            var targetPort = findPort(self.targetPorts, app, tab);
+            if (targetPort) {
+                self.onPortDisconnected(app, tab, targetPort);
+            }
         }
     });
     port.onMessage.addListener(function (message) {
-        console.log("Received message from ui port,  app:tab " + app + ":" + tab, message);
         var targetPort = self.getTargetPort(app, tab);
         if (targetPort) {
             targetPort.postMessage(message);
         } else {
-            port.disconnect();
-            self.onPortDisconnected(app, tab, port);
-            console.error("Target port not found for  app id " + app + " and tab id " + tab);
+            console.error("Target port not found for app id " + app + " and tab id " + tab);
+            // Don't disconnect here immediately, target might still connect
         }
     });
-
-
 };
 
 PortManager.prototype.trackTargetPort = function (app, tab, port) {
-    if(this.getTargetPort(app, tab)){
-        port.disconnect();
-        throw new Error("port for " + app + ":" + tab + " already exist");
-
-    }
-    if(!this.getUiPort(app, tab)){
-        port.disconnect();
-        throw new Error("Target port cannot be tracked before ui port exist. Id " + app + ":" + tab);
-    }
     var self = this;
     console.log("Trying to track target port for app " + app + " and tab " + tab);
     putPort(this.targetPorts, app, tab, port);
     port.onDisconnect.addListener(function () {
-        removePort(self.targetPorts, app, tab);
-        var uiPort = findPort(self.uiPorts, app, tab);
-        if (uiPort) {
-            uiPort.disconnect();
-            self.onPortDisconnected(app, tab, uiPort);
+        const removed = removePort(self.targetPorts, app, tab);
+        if (removed) {
+            var uiPort = findPort(self.uiPorts, app, tab);
+            if (uiPort) {
+                self.onPortDisconnected(app, tab, uiPort);
+            }
         }
     });
     port.onMessage.addListener(function (message) {
-        console.log("Received message from ui port,  app:tab " + app + ":" + tab, message);
         var uiPort = self.getUiPort(app, tab);
         if (uiPort) {
             uiPort.postMessage({from: {tab: tab, app: app}, obj: message});
         } else {
-            port.disconnect();
-            self.onPortDisconnected(app, tab, port);
             console.error("Can't find ui port for appId " + app + " and tab Id" + tab);
         }
     })
-
 };
 
 
@@ -167,22 +148,21 @@ function initializeExtension() {
     var portManager = new PortManager();
     chrome.runtime.onConnect.addListener(function (port) {
         if (port.name.indexOf("for_tab_") === 0) {
-            console.log("Devtools listening for tab ", port.name);
             var tabId = parseInt(port.name.substring("for_tab_".length));
             chrome.scripting.executeScript({
                 target: { tabId: tabId },
                 files: ["htmlStorageHook.js"]
             }, function () {
+                if (chrome.runtime.lastError) {
+                    console.warn("Script injection failed:", chrome.runtime.lastError.message);
+                }
                 port.postMessage("portConnected");
-                console.log("Connecting devtools port");
             });
             portManager.trackUiPort(undefined, tabId, port);
         } else if (port.name == "inspected_tab_") {
-            console.log("Inspected tab connected", port.name);
             portManager.trackTargetPort(undefined, port.sender.tab.id, port);
         } else {
-            console.log("Another port connected", port);
-            if(port.name.indexOf("_")< 0) {
+            if(port.name.indexOf("_") < 0) {
                 portManager.trackUiPort(port.name, undefined, port);
             } else {
                var names = port.name.split("_");
@@ -193,18 +173,11 @@ function initializeExtension() {
     });
 
 
-    //only invoked by chrome apps
     chrome.runtime.onConnectExternal.addListener(function (externalPort) {
         var appName = externalPort.sender.id;
         var tabId = externalPort.sender.tab ? externalPort.sender.tab.id : undefined;
-
-        if (portManager.getUiPort(appName, tabId)) {
-            portManager.trackTargetPort(appName, tabId, externalPort)
-        } else {
-            externalPort.disconnect();
-        }
+        portManager.trackTargetPort(appName, tabId, externalPort);
     });
 }
 
-// Initialize the extension when the service worker starts
 initializeExtension();
