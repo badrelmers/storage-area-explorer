@@ -5,6 +5,7 @@ angular.module("storageExplorer").factory("storage", function ($q, $rootScope, a
         sync: delegateStorage(connectionDeferred.promise, "sync"),
         local: delegateStorage(connectionDeferred.promise, "local"),
         managed: delegateStorage(connectionDeferred.promise, "managed"),
+        session: delegateStorage(connectionDeferred.promise, "session"),
         localStorage: delegateStorage(connectionDeferred.promise, "localStorage"),
         sessionStorage: delegateStorage(connectionDeferred.promise, "sessionStorage")
     };
