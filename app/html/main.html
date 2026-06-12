@@ -23,6 +23,16 @@
                         </div>
                     </div>
 
+                    <div ng-if="storageDescriptor.name == 'session'">
+                        <div class="usage" ng-if="stats.session.bytesInUse > 0">
+                            {{stats.session.bytesInUse |
+                            prettyBytes}} / {{meta.session.QUOTA_BYTES | prettyBytes}}
+                        </div>
+                        <div class="usage" ng-if="stats.session.bytesInUse == 0">
+                            area is empty
+                        </div>
+                    </div>
+
                     <div ng-if="storageDescriptor.name == 'sync'">
                         <div class="usage" ng-if="stats.sync.bytesInUse > 0">
                             {{stats.sync.bytesInUse |

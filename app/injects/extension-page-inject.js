@@ -15,6 +15,9 @@ angular.module("storageExplorer").value("extensionPageInject", function (chrome)
             storages['sync'] = chrome.storage.sync;
             storages['local'] = chrome.storage.local;
             storages['managed'] = chrome.storage.managed;
+            if (chrome.storage.session) {
+                storages['session'] = chrome.storage.session;
+            }
         }
     } catch (e) {
 

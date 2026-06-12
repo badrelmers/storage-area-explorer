@@ -15,6 +15,9 @@ angular.module("storageExplorer").factory("appContext", function ($q, $rootScope
                         storageTypes.push('local');
                         storageTypes.push('sync');
                         storageTypes.push('managed');
+                        if (chrome.storage.session) {
+                            storageTypes.push('session');
+                        }
                     }
                 }
 
