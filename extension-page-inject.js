@@ -127,23 +127,23 @@ function extensionPageInject(chrome) {
         args.push(function () {
             var results = Array.prototype.slice.call(arguments);
             message.results = results;
+
+            message.meta = {};
+            const constants = ['QUOTA_BYTES', 'QUOTA_BYTES_PER_ITEM', 'MAX_ITEMS', 'MAX_WRITE_OPERATIONS_PER_HOUR', 'MAX_WRITE_OPERATIONS_PER_MINUTE', 'MAX_SUSTAINED_WRITE_OPERATIONS_PER_MINUTE'];
+            constants.forEach(c => {
+                if (storage[c] !== undefined) {
+                    message.meta[c] = storage[c];
+                }
+            });
+            Object.keys(storage).forEach(function (key) {
+                if (typeof storage[key] !== 'function') {
+                    message.meta[key] = storage[key];
+                }
+            });
+
             port.postMessage(message);
         });
 
-        message.meta = {};
-        // Explicitly copy non-enumerable quota constants
-        const constants = ['QUOTA_BYTES', 'QUOTA_BYTES_PER_ITEM', 'MAX_ITEMS', 'MAX_WRITE_OPERATIONS_PER_HOUR', 'MAX_WRITE_OPERATIONS_PER_MINUTE', 'MAX_SUSTAINED_WRITE_OPERATIONS_PER_MINUTE'];
-        constants.forEach(c => {
-            if (storage[c] !== undefined) {
-                message.meta[c] = storage[c];
-            }
-        });
-
-        Object.keys(storage).forEach(function (key) {
-            if (typeof storage[key] !== 'function') {
-                message.meta[key] = storage[key];
-            }
-        });
         method.apply(storage, args);
     });
 }

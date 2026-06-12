@@ -17,6 +17,12 @@ const descriptors = {
     "sessionStorage": {title: "window.sessionStorage", stringOnly: true}
 };
 
+const defaultQuotas = {
+    local: { QUOTA_BYTES: 5242880 },
+    sync: { QUOTA_BYTES: 102400, MAX_ITEMS: 512, QUOTA_BYTES_PER_ITEM: 8192 },
+    session: { QUOTA_BYTES: 10485760 }
+};
+
 function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
     if (!bytes) return '';
@@ -43,12 +49,12 @@ function renderTabs() {
 
         let usageHtml = '';
         const s = stats[desc.name] || { bytesInUse: 0, count: 0 };
-        const m = meta[desc.name];
+        const m = meta[desc.name] || defaultQuotas[desc.name] || {};
 
         if (desc.name === 'local' || desc.name === 'session') {
-            usageHtml = s.count > 0 ? `${formatBytes(s.bytesInUse)} / ${formatBytes(m ? m.QUOTA_BYTES : 0)}` : 'area is empty';
+            usageHtml = s.count > 0 ? `${formatBytes(s.bytesInUse)} / ${formatBytes(m.QUOTA_BYTES)}` : 'area is empty';
         } else if (desc.name === 'sync') {
-            usageHtml = s.count > 0 ? `${formatBytes(s.bytesInUse)} / ${formatBytes(m ? m.QUOTA_BYTES : 0)}, ${s.count} / ${m ? m.MAX_ITEMS : 0} items` : 'area is empty';
+            usageHtml = s.count > 0 ? `${formatBytes(s.bytesInUse)} / ${formatBytes(m.QUOTA_BYTES)}, ${s.count} / ${m.MAX_ITEMS} items` : 'area is empty';
         } else if (desc.stringOnly || desc.readonly) {
             usageHtml = s.count > 0 ? `${s.count} items` : 'area is empty';
         }
@@ -115,8 +121,9 @@ function renderResults() {
             const divUsage = document.createElement('div');
             divUsage.className = 'usage';
             let usageText = formatBytes(result.bytesInUse);
+            const m = meta[currentType] || defaultQuotas[currentType] || {};
             if (currentType === 'sync') {
-                usageText += ' / ' + formatBytes(meta.sync ? meta.sync.QUOTA_BYTES_PER_ITEM : 0);
+                usageText += ' / ' + formatBytes(m.QUOTA_BYTES_PER_ITEM);
             }
             divUsage.textContent = usageText;
             tdKey.appendChild(divUsage);
@@ -218,7 +225,11 @@ function adaptRawData() {
 }
 
 function calculateSize(obj) {
-    return new Blob([JSON.stringify(obj)]).size;
+    try {
+        return new Blob([JSON.stringify(obj)]).size;
+    } catch (e) {
+        return 0;
+    }
 }
 
 function refreshStats() {
@@ -227,7 +238,6 @@ function refreshStats() {
 
     results.slice(0, 40).forEach(result => {
         storage[currentType].getBytesInUse(result.name, function (amount) {
-            // Fallback for session storage or if API returns 0
             if (amount === 0 && rawData[result.name] !== undefined) {
                 amount = calculateSize(rawData[result.name]);
             }
@@ -308,13 +318,17 @@ function editItem(key) {
 
 function deleteItem(key) {
     if (confirm("Are you sure?")) {
-        getStorage()[currentType].remove(key);
+        getStorage()[currentType].remove(key, () => {
+            loadStorageData();
+        });
     }
 }
 
 function clearAll() {
     if (confirm("Are you sure you want to clear all data in this area?")) {
-        getStorage()[currentType].clear();
+        getStorage()[currentType].clear(() => {
+            loadStorageData();
+        });
     }
 }
 
@@ -340,6 +354,7 @@ function saveItem() {
     getStorage()[currentType].set(update, function() {
         mode = 'list';
         refreshView();
+        loadStorageData();
     });
 }
 
@@ -370,7 +385,9 @@ function importFromFile() {
             try {
                 const data = JSON.parse(content);
                 getStorage()[currentType].clear(() => {
-                    getStorage()[currentType].set(data);
+                    getStorage()[currentType].set(data, () => {
+                        loadStorageData();
+                    });
                 });
             } catch (err) {
                 alert("Failed to parse JSON file");
@@ -381,11 +398,17 @@ function importFromFile() {
 }
 
 function importFromClipboard() {
-    clipboard.paste().then(content => {
+    const pastePromise = clipboard.paste();
+    if (!pastePromise) return;
+
+    pastePromise.then(content => {
+        if (!content) return;
         try {
             const data = JSON.parse(content);
             getStorage()[currentType].clear(() => {
-                getStorage()[currentType].set(data);
+                getStorage()[currentType].set(data, () => {
+                    loadStorageData();
+                });
             });
         } catch (err) {
             alert("Failed to parse JSON from clipboard");
@@ -396,7 +419,6 @@ function importFromClipboard() {
 function initApp() {
     initStorage(onStorageChanged);
 
-    // Add event listeners for static elements
     document.getElementById('add-btn').addEventListener('click', addItem);
     document.getElementById('clear-btn').addEventListener('click', clearAll);
     document.getElementById('refresh-btn').addEventListener('click', reloadPage);
@@ -408,9 +430,6 @@ function initApp() {
     document.getElementById('cancel-btn').addEventListener('click', cancelEdit);
 
     appContext().then(appInfo => {
-        if (appInfo.tabId) {
-            clipboard.tabId = appInfo.tabId;
-        }
         storageDescriptors = [];
         stats = {};
         meta = {};

@@ -23,10 +23,12 @@ const clipboard = {
     paste: function () {
         if (navigator.clipboard && navigator.clipboard.readText) {
             return navigator.clipboard.readText().catch(err => {
-                console.error('Clipboard paste failed', err);
-                return "";
+                return this.fallbackPaste();
             });
         }
-        return Promise.resolve("");
+        return Promise.resolve(this.fallbackPaste());
+    },
+    fallbackPaste: function () {
+        return prompt("Please paste JSON from clipboard here:");
     }
 };
