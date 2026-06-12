@@ -6,7 +6,7 @@
     "background": {
         "service_worker": "background.js"
     },
-    "permissions": ["storage", "clipboardRead", "clipboardWrite", "scripting"],
+    "permissions": ["storage", "clipboardRead", "clipboardWrite", "scripting", "tabs"],
     "host_permissions": ["<all_urls>"],
     "manifest_version": 3
 }
