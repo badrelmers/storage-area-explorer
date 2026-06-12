@@ -1,4 +1,4 @@
-angular.module("storageExplorer").value("targetPageInject", function (chrome) {
+function targetPageInject(chrome) {
     var from = "APP_ID";
     var port = chrome.runtime.connect(from);
     port.onMessage.addListener(function (message) {
@@ -6,6 +6,10 @@ angular.module("storageExplorer").value("targetPageInject", function (chrome) {
             return;
         }
         var storage = chrome.storage[message.type];
+        if (!storage) {
+            console.error("Storage not found", message.type);
+            return;
+        }
         var method = storage[message.method];
         var args = [];
         if (message.args) {
@@ -39,4 +43,4 @@ angular.module("storageExplorer").value("targetPageInject", function (chrome) {
         port.postMessage({change: true, changes: changes, type: name});
     };
     chrome.storage.onChanged.addListener(storageListener);
-});
+}

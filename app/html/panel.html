@@ -1,34 +1,60 @@
 <!DOCTYPE html>
-<html ng-csp ng-app="storageExplorer">
+<html>
 <head>
-    <title></title>
+    <title>Storage Explorer</title>
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="/components/bootstrap/dist/css/bootstrap.css">
-    <script src="/components/jquery/jquery.js"></script>
-    <script src="/components/bootstrap/dist/js/bootstrap.js"></script>
-    <script src="/components/angular/angular.js"></script>
-    <script src="../app.js"></script>
-    <script src="../services/prettyJson.js"></script>
-    <script src="../services/storage.js"></script>
-    <script src="../services/appContext.js"></script>
-    <script src="../services/clipboard.js"></script>
-    <script src="../services/delegateStorage.js"></script>
-    <script src="../services/injectionUtils.js"></script>
-    <script src="../services/fileService.js"></script>
-    <script src="../filters/prettyBytes.js"></script>
-    <script src="../controllers/storage-ctrl.js"></script>
-    <script src="../controllers/export-import-ctrl.js"></script>
-    <script src="../controllers/add-edit-item-ctrl.js"></script>
-    <script src="../directives/entryValue.js"></script>
-    <script src="../injects/target-page-inject.js"></script>
+    <script src="../js/injectionUtils.js"></script>
+    <script src="../js/appContext.js"></script>
+    <script src="../js/delegateStorage.js"></script>
+    <script src="../js/storage.js"></script>
+    <script src="../js/fileService.js"></script>
+    <script src="../js/clipboard.js"></script>
     <script src="../injects/extension-page-inject.js"></script>
-
-
+    <script src="../injects/target-page-inject.js"></script>
+    <script src="../js/main.js"></script>
 </head>
 <body>
 
-<ng-include src="'main.html'"/>
+<div class="main">
+    <div class="header">
+        <ul id="tabs" class="nav nav-tabs">
+            <!-- Tabs will be rendered here -->
+        </ul>
+    </div>
 
+    <div id="list-panel" class="list">
+        <div class="controls" style="margin-bottom: 10px;">
+            <button class="btn btn-primary btn-xs" onclick="addItem()">Add Item</button>
+            <button class="btn btn-danger btn-xs" onclick="clearAll()">Clear All</button>
+            <button class="btn btn-default btn-xs" onclick="reloadPage()">Refresh</button>
+
+            <span style="margin-left: 20px;">
+                <button class="btn btn-default btn-xs" onclick="exportToFile()">Export File</button>
+                <button class="btn btn-default btn-xs" onclick="exportToClipboard()">Export Clip</button>
+                <button class="btn btn-default btn-xs" onclick="importFromFile()">Import File</button>
+                <button class="btn btn-default btn-xs" onclick="importFromClipboard()">Import Clip</button>
+            </span>
+        </div>
+
+        <div id="list-content">
+            <!-- Storage results will be rendered here -->
+        </div>
+    </div>
+
+    <div id="edit-panel" class="editPanel" style="display: none;">
+        <input id="key-input" class="key form-control" type="text" placeholder="Name Of Key">
+
+        <span class="text-info">Value in JSON format (unless string-only area)</span>
+        <span id="validation-msg" class="text-warning"></span>
+
+        <textarea id="value-input" class="value form-control" placeholder="Value"></textarea>
+
+        <div class="controls">
+            <button class="btn btn-primary btn-xs" onclick="saveItem()">Save</button>
+            <button class="btn btn-danger btn-xs" onclick="cancelEdit()">Cancel</button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

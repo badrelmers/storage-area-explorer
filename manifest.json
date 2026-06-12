@@ -1,12 +1,12 @@
 {
     "name": "Storage Area Explorer 2",
-    "version": "1.0.0",
-    "description": "Simple editor for Storage Area for Chrome Packaged Apps & Extensions - new working version",
+    "version": "2.0.0",
+    "description": "Vanilla JS editor for Storage Area for Chrome Extensions",
     "devtools_page": "app/html/devtoolsBackground.html",
     "background": {
         "service_worker": "app/chrome/background.js"
     },
-    "permissions": ["clipboardRead", "clipboardWrite", "scripting"],
+    "permissions": ["storage", "clipboardRead", "clipboardWrite", "scripting"],
     "host_permissions": ["<all_urls>"],
     "manifest_version": 3
 }

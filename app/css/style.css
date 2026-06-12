@@ -5,12 +5,16 @@
 .value {
     display: block;
     -webkit-box-flex: 1;
+    width: 100%;
+    height: 300px;
 }
 
 .key {
     display: block;
     width: 100%;
     margin-top: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
 }
 
 
@@ -29,6 +33,7 @@
     padding: 10px;
     display: -webkit-box;
     -webkit-box-orient:vertical;
+    font-family: sans-serif;
 }
 body {
     margin: 0;
@@ -38,41 +43,34 @@ body {
 
 textarea {
     resize: none;
+    padding: 5px;
+    border: 1px solid #ccc;
+    font-family: monospace;
 }
 table {
     width: 100%;
     font-size: 11px;
+    border-collapse: collapse;
 }
 table tbody tr.list-row td {
-    padding: 4px 4px 4px 16px;
-    position:relative;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
 }
 
 table thead tr.list-row th {
-    padding: 4px 4px 4px 16px;
-}
-
-th {
+    padding: 8px;
     text-align: left;
+    border-bottom: 2px solid #ddd;
 }
 
 .displayedValue {
-    white-space: nowrap;
+    white-space: pre-wrap;
     font-family: monospace;
     display: block;
     overflow: hidden;
-    min-width: 0;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 5px;
-    bottom: 0;
+    max-height: 100px;
+    text-overflow: ellipsis;
 }
-
-/*.object {*/
-    /*display: block;*/
-    /*padding-left: 2em;*/
-/*}*/
 
 .error {
     color:red;
@@ -84,47 +82,69 @@ th {
     font-weight: bold;
 }
 
-.string {
-    color:green;
-}
-.quote {
-    color:green;
-}
-
-.number {
-    color:maroon;
-}
-
 .list {
     display: -webkit-box;
     -webkit-box-flex: 1;
     -webkit-box-orient: vertical;
+    margin-top: 10px;
 }
 
-.controls .btn {
-    width: 80px;
+.btn {
+    padding: 5px 10px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    font-size: 11px;
+    margin-right: 5px;
 }
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+    border-color: #0069d9;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border-color: #c82333;
+}
+
 .controls {
     margin-top: 5px;
 }
-.header .nav li{
-    cursor: pointer;
+
+.nav-tabs {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    border-bottom: 1px solid #ddd;
 }
 
-.header .nav li a {
-    font-size: 12px;
+.nav-tabs li {
     padding: 5px 15px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    margin-bottom: -1px;
 }
+
+.nav-tabs li.active {
+    border-color: #ddd;
+    border-bottom-color: white;
+    background: white;
+    font-weight: bold;
+}
+
 .usage {
-    font-size: 10px;
+    font-size: 9px;
+    color: #666;
 }
 
-.explorer-disabled {
-    padding-top: 20px;
-    padding-left: 10%;
-}
+.text-info { color: #17a2b8; font-size: 11px; }
+.text-warning { color: #ffc107; font-size: 11px; }
 
-.controls{
-    padding-top: 2px;
+.form-control {
+    box-sizing: border-box;
 }
-
