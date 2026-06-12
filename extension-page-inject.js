@@ -1,7 +1,70 @@
-angular.module("storageExplorer").value("extensionPageInject", function (chrome) {
+function extensionPageInject(chrome) {
     var from = "APP_ID";
     var port = chrome.runtime.connect(from);
     var storages = {};
+
+    function StorageArea(storage) {
+        this.storage = storage;
+    }
+
+    StorageArea.prototype.get = function (items, callback) {
+        if (typeof items === 'function') {
+            callback = items;
+            items = null;
+        }
+        var returnItems = {};
+        var storage = this.storage;
+        if (items === null || items === undefined) {
+            for (var i = 0; i < storage.length; i++) {
+                var key2 = storage.key(i);
+                returnItems[key2] = storage.getItem(key2);
+            }
+        } else {
+            if (typeof items === 'string') {
+                returnItems[items] = storage.getItem(items);
+            } else if (Array.isArray(items)) {
+                items.forEach(function (key) {
+                    returnItems[key] = storage.getItem(key);
+                });
+            } else {
+                for (var key in items) {
+                    var val = storage.getItem(key);
+                    returnItems[key] = val !== null ? val : items[key];
+                }
+            }
+        }
+        callback && callback(returnItems);
+    };
+
+    StorageArea.prototype.set = function (items, callback) {
+        var storage = this.storage;
+        for (var key in items) {
+            storage.setItem(key, items[key]);
+        }
+        callback && callback();
+    };
+
+    StorageArea.prototype.remove = function (items, callback) {
+        var storage = this.storage;
+        if (typeof items === 'string') {
+            storage.removeItem(items);
+        } else if (Array.isArray(items)) {
+            items.forEach(function (key) {
+                storage.removeItem(key);
+            });
+        }
+        callback && callback();
+    };
+
+    StorageArea.prototype.clear = function (callback) {
+        this.storage.clear();
+        callback && callback();
+    };
+
+    StorageArea.prototype.getBytesInUse = function(items, callback){
+        callback && callback(0);
+    };
+
     try {
         if (chrome.storage) {
             port.onDisconnect.addListener(function () {
@@ -19,106 +82,11 @@ angular.module("storageExplorer").value("extensionPageInject", function (chrome)
                 storages['session'] = chrome.storage.session;
             }
         }
-    } catch (e) {
-
-    }
+    } catch (e) {}
 
     try {
-
         storages['localStorage'] = new StorageArea(window.localStorage);
         storages['sessionStorage'] = new StorageArea(window.sessionStorage);
-        function StorageChange(oldValue, newValue) {
-            this.oldValue = oldValue;
-            this.newValue = newValue;
-        }
-
-        function StorageArea(storage) {
-            this.storage = storage;
-        }
-
-        function applyFunctorPerItem(items, functor) {
-            if (typeof items === 'string') {
-                functor(items);
-            }
-            if (typeof items === 'object') {
-                if (Object.prototype.toString.call(items) === '[object Array]') {
-                    items.forEach(function (val) {
-                        functor(items[val]);
-                    })
-                } else {
-                    for (var key in items) {
-                        if (items.hasOwnProperty(key)) {
-                            functor(key, items[key]);
-                        }
-                    }
-                }
-            }
-
-        }
-
-        StorageArea.prototype.get = function (items, callback) {
-            if (typeof items === 'function') {
-                callback = items;
-                items = null;
-            }
-            var returnItems = {};
-            var storage = this.storage;
-            if (items === null || items === undefined) {
-                for (var i = 0; i < storage.length; i++) {
-                    var key2 = storage.key(i);
-                    returnItems[key2] = storage.getItem(key2);
-                }
-            } else {
-                applyFunctorPerItem(items, function (key) {
-                    var storedItem = storage.getItem(key);
-                    if (arguments.length === 2 && storedItem === null) {
-                        storedItem = arguments[1];
-                    }
-                    returnItems[key] = storedItem;
-                });
-            }
-
-            callback && callback(returnItems);
-        };
-
-        StorageArea.prototype.set = function (items, callback) {
-            if (typeof items === 'function') {
-                callback = items;
-                items = null;
-            }
-            var storage = this.storage;
-            applyFunctorPerItem(items, function (key, value) {
-                storage.setItem(key, value);
-            });
-            callback && callback();
-        };
-
-        StorageArea.prototype.remove = function (items, callback) {
-            if (typeof items === 'function') {
-                callback = items;
-                items = null;
-            }
-            var storage = this.storage;
-            applyFunctorPerItem(items, function (key) {
-                storage.removeItem(key);
-            });
-            callback && callback();
-        };
-
-        StorageArea.prototype.clear = function (callback) {
-            this.storage.clear();
-            callback && callback();
-        };
-
-        StorageArea.prototype.getBytesInUse = function(items,callback){
-            var bytesInUse = 0;
-            if(callback === undefined && typeof items === 'function'){
-                callback = items;
-                items = undefined;
-            }
-            callback && callback(bytesInUse);
-        };
-
 
         var frame = document.createElement("iframe");
         frame.style.display = 'none';
@@ -130,48 +98,44 @@ angular.module("storageExplorer").value("extensionPageInject", function (chrome)
             } else if (event.storageArea === event.currentTarget.sessionStorage) {
                 type = "sessionStorage"
             } else {
-                console.log("Unknown storage area");
                 return;
             }
             var changes = {};
-            changes[event.key] = {newValue: event.newValue};
+            if (event.key) {
+                changes[event.key] = {newValue: event.newValue};
+            } else {
+                changes = "clear";
+            }
             port.postMessage({change: true, type: type, changes: changes});
         });
         port.onDisconnect.addListener(function () {
-            document.documentElement.removeChild(frame);
-        })
-    } catch (e) {
-
-    }
-
+            if (frame.parentNode) {
+                document.documentElement.removeChild(frame);
+            }
+        });
+    } catch (e) {}
 
     port.onMessage.addListener(function (message) {
         if (message.target !== chrome.runtime.id || !message.type) {
             return;
         }
         var storage = storages[message.type];
+        if (!storage) return;
         var method = storage[message.method];
-        var args = [];
-        if (message.args) {
-            message.args.forEach(function (arg) {
-                args.push(arg);
-            });
-        }
+        var args = message.args || [];
+
         args.push(function () {
-            var results = [];
-            for (var i = 0; i < arguments.length; i++) {
-                results.push(arguments[i]);
-            }
+            var results = Array.prototype.slice.call(arguments);
             message.results = results;
             port.postMessage(message);
         });
+
         message.meta = {};
         Object.keys(storage).forEach(function (key) {
-            if (typeof storage[key] === 'function') {
-                return;
+            if (typeof storage[key] !== 'function') {
+                message.meta[key] = storage[key];
             }
-            message.meta[key] = storage[key];
         });
         method.apply(storage, args);
     });
-});
+}
