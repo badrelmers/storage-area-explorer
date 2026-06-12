@@ -408,6 +408,9 @@ function initApp() {
     document.getElementById('cancel-btn').addEventListener('click', cancelEdit);
 
     appContext().then(appInfo => {
+        if (appInfo.tabId) {
+            clipboard.tabId = appInfo.tabId;
+        }
         storageDescriptors = [];
         stats = {};
         meta = {};

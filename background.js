@@ -206,10 +206,16 @@ function initializeExtension() {
     });
 
     chrome.runtime.onMessage.addListener(function (message, sender, response) {
+        const tabId = (sender.tab && sender.tab.id) || message.tabId;
+        if (!tabId) {
+            console.error("No tabId available for clipboard operation");
+            return;
+        }
+
         if (message.action === 'copy') {
             // Use chrome.scripting API to handle clipboard operations in MV3
             chrome.scripting.executeScript({
-                target: { tabId: sender.tab.id },
+                target: { tabId: tabId },
                 func: function(text) {
                     navigator.clipboard.writeText(text).then(function() {
                         console.log('Text copied to clipboard');
@@ -232,7 +238,7 @@ function initializeExtension() {
         if (message.action === 'paste') {
             // Use chrome.scripting API to handle clipboard operations in MV3
             chrome.scripting.executeScript({
-                target: { tabId: sender.tab.id },
+                target: { tabId: tabId },
                 func: function() {
                     return navigator.clipboard.readText().catch(function(err) {
                         console.error('Could not read clipboard: ', err);
@@ -247,7 +253,14 @@ function initializeExtension() {
                     });
                 }
             }, function(results) {
-                response && response(results[0].result);
+                if (chrome.runtime.lastError) {
+                    console.error("Paste error:", chrome.runtime.lastError);
+                    response && response("");
+                } else if (results && results[0]) {
+                    response && response(results[0].result);
+                } else {
+                    response && response("");
+                }
             });
             return true; // Indicates we will call response asynchronously
         }

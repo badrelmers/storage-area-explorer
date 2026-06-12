@@ -35,10 +35,9 @@ function targetPageInject(chrome) {
         });
 
         Object.keys(storage).forEach(function (key) {
-            if (typeof storage[key] === 'function') {
-                return;
+            if (typeof storage[key] !== 'function') {
+                message.meta[key] = storage[key];
             }
-            message.meta[key] = storage[key];
         });
         method.apply(storage, args);
     });
