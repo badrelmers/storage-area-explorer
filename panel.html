@@ -2,16 +2,16 @@
 <html>
 <head>
     <title>Storage Explorer</title>
-    <link rel="stylesheet" href="../css/style.css">
-    <script src="../js/injectionUtils.js"></script>
-    <script src="../js/appContext.js"></script>
-    <script src="../js/delegateStorage.js"></script>
-    <script src="../js/storage.js"></script>
-    <script src="../js/fileService.js"></script>
-    <script src="../js/clipboard.js"></script>
-    <script src="../injects/extension-page-inject.js"></script>
-    <script src="../injects/target-page-inject.js"></script>
-    <script src="../js/main.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="injectionUtils.js"></script>
+    <script src="appContext.js"></script>
+    <script src="delegateStorage.js"></script>
+    <script src="storage.js"></script>
+    <script src="fileService.js"></script>
+    <script src="clipboard.js"></script>
+    <script src="extension-page-inject.js"></script>
+    <script src="target-page-inject.js"></script>
+    <script src="main.js"></script>
 </head>
 <body>
 
@@ -44,10 +44,10 @@
     <div id="edit-panel" class="editPanel" style="display: none;">
         <input id="key-input" class="key form-control" type="text" placeholder="Name Of Key">
 
-        <span class="text-info">Value in JSON format (unless string-only area)</span>
-        <span id="validation-msg" class="text-warning"></span>
+        <div class="text-info" style="margin-top: 5px;">Value in JSON format (unless string-only area)</div>
+        <div id="validation-msg" class="text-warning"></div>
 
-        <textarea id="value-input" class="value form-control" placeholder="Value"></textarea>
+        <textarea id="value-input" class="value form-control" placeholder="Value" style="margin-top: 5px;"></textarea>
 
         <div class="controls">
             <button class="btn btn-primary btn-xs" onclick="saveItem()">Save</button>

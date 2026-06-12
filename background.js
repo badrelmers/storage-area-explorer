@@ -171,7 +171,7 @@ function initializeExtension() {
             var tabId = parseInt(port.name.substring("for_tab_".length));
             chrome.scripting.executeScript({
                 target: { tabId: tabId },
-                files: ["app/chrome/htmlStorageHook.js"]
+                files: ["htmlStorageHook.js"]
             }, function () {
                 port.postMessage("portConnected");
                 console.log("Connecting devtools port");
