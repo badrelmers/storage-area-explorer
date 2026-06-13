@@ -1,34 +1,84 @@
 <!DOCTYPE html>
-<html ng-csp ng-app="storageExplorer">
+<html>
 <head>
-    <title></title>
+    <meta charset="utf-8">
+    <title>Storage Explorer</title>
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="/components/bootstrap/dist/css/bootstrap.css">
-    <script src="/components/jquery/jquery.js"></script>
-    <script src="/components/bootstrap/dist/js/bootstrap.js"></script>
-    <script src="/components/angular/angular.js"></script>
-    <script src="../app.js"></script>
-    <script src="../services/prettyJson.js"></script>
-    <script src="../services/storage.js"></script>
-    <script src="../services/appContext.js"></script>
-    <script src="../services/clipboard.js"></script>
-    <script src="../services/delegateStorage.js"></script>
-    <script src="../services/injectionUtils.js"></script>
-    <script src="../services/fileService.js"></script>
-    <script src="../filters/prettyBytes.js"></script>
-    <script src="../controllers/storage-ctrl.js"></script>
-    <script src="../controllers/export-import-ctrl.js"></script>
-    <script src="../controllers/add-edit-item-ctrl.js"></script>
-    <script src="../directives/entryValue.js"></script>
-    <script src="../injects/target-page-inject.js"></script>
-    <script src="../injects/extension-page-inject.js"></script>
-
-
 </head>
 <body>
 
-<ng-include src="'main.html'"/>
+<div id="connecting-view" class="connecting-state">
+    <div class="connecting-dot"></div>
+    <span>Connecting…</span>
+</div>
 
+<div id="error-view" class="hidden explorer-disabled">
+    <h3>Explorer is disabled on normal web pages or extensions without storage permission</h3>
+    <h3><a href="#" id="reload-link">Refresh</a></h3>
+</div>
 
+<div id="main-view" class="hidden main">
+    <div class="header">
+        <ul class="nav-tabs" id="tab-list"></ul>
+    </div>
+
+    <div id="import-error" class="hidden alert-danger">
+        <button id="import-error-close" class="close-btn">&times;</button>
+        <strong id="import-error-title"></strong><br>
+        <span id="import-error-message"></span><br>
+        <pre id="import-error-content"></pre>
+    </div>
+
+    <div id="list-view" class="hidden list">
+        <div class="controls" id="toolbar">
+            <button id="btn-add" class="btn btn-primary btn-sm hidden">Add Item</button>
+            <button id="btn-clear" class="btn btn-warning btn-sm hidden">Clear</button>
+            <div class="dropdown" id="export-dropdown">
+                <button class="btn btn-info btn-sm dropdown-toggle">Export ▾</button>
+                <ul class="dropdown-menu">
+                    <li><a href="#" id="export-file">⬇ To File</a></li>
+                    <li><a href="#" id="export-clipboard">↗ To Clipboard</a></li>
+                </ul>
+            </div>
+            <div class="dropdown hidden" id="import-dropdown">
+                <button class="btn btn-info btn-sm dropdown-toggle">Import ▾</button>
+                <ul class="dropdown-menu">
+                    <li><a href="#" id="import-file">From File</a></li>
+                    <li><a href="#" id="import-clipboard">From Clipboard</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="table-container">
+            <table id="storage-table" class="hidden">
+                <thead>
+                    <tr class="list-row">
+                        <th>Key</th>
+                        <th style="width:100%">Value</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="storage-tbody"></tbody>
+            </table>
+            <div id="empty-message" class="hidden" style="padding-top:20px">
+                <h3>No items in this area</h3>
+                <h4 id="readonly-note" class="hidden">Managed area is always readonly.</h4>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-view" class="hidden editPanel">
+        <input id="edit-key" class="key form-control" type="text" placeholder="Name Of Key">
+        <span id="edit-hint" class="text-info"></span>
+        <span id="edit-validation" class="text-warning hidden"></span>
+        <textarea id="edit-value" class="value form-control" placeholder="Value"></textarea>
+        <div class="controls">
+            <button id="btn-save" class="btn btn-primary btn-sm">Save</button>
+            <button id="btn-cancel" class="btn btn-danger btn-sm">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script src="../panel.js"></script>
 </body>
 </html>
