@@ -14,8 +14,5 @@ Install from latest stable 0.4.3 version from [Chrome Store](https://chrome.goog
 
 Screen shots:
 
-![General view](https://raw.github.com/jusio/storage-area-explorer/master/screenshots/general-view.png)
-![Editing](https://raw.github.com/jusio/storage-area-explorer/master/screenshots/editing.png)
-![Export](https://raw.github.com/jusio/storage-area-explorer/master/screenshots/export.png)
-![Import](https://raw.github.com/jusio/storage-area-explorer/master/screenshots/import.png)
-![HTML5 Local&Session storage inspection](https://raw.github.com/jusio/storage-area-explorer/master/screenshots/localStorage.png)
+![General view](screenshots/general-view.png)
+
