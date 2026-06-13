@@ -435,11 +435,42 @@
         renderTabs();
         setCurrentType(state.storageDescriptors[0]);
         bindEvents();
-        // Tab counts/bytes for non-active tabs are loaded lazily when the user
-        // clicks them (setCurrentType -> loadCurrentStorage -> refreshStats).
-        // Bulk-loading all tabs at startup flooded the port with 6-9 messages
-        // the moment the connection resolved, slowing down the second DevTools
-        // window considerably.
+        // Load counts and byte usage for every tab up-front so the tab headers
+        // show accurate info immediately. All calls are queued via connectionPromise
+        // and fire once the port is established — no UI blocking.
+        // (This was removed when we were on MV3 to avoid flooding the service-worker
+        // port on startup; MV2 event pages don't have that cold-start problem.)
+        refreshAllTabCounts();
+    }
+
+    // Fetch count + bytesInUse for every storage area so all tab headers are
+    // populated immediately without the user having to click each tab.
+    function refreshAllTabCounts() {
+        state.storageDescriptors.forEach(function (desc) {
+            storageGet(desc.name, function (obj) {
+                state.stats[desc.name].count = Object.keys(obj || {}).length;
+
+                if (!desc.stringOnly && !desc.readonly) {
+                    storageGetBytesInUse(desc.name, function (bytes) {
+                        // chrome.storage.session may return 0 even with data —
+                        // estimateBytes() fallback (already used per-item in
+                        // refreshStats) keeps the tab header consistent.
+                        if (bytes === 0 && state.stats[desc.name].count > 0) {
+                            var items = obj || {};
+                            bytes = Object.keys(items).reduce(function (sum, k) {
+                                return sum + estimateBytes(k, items[k]);
+                            }, 0);
+                        }
+                        state.stats[desc.name].bytesInUse = bytes;
+                        renderTabs();
+                        updateToolbar();
+                    });
+                } else {
+                    renderTabs();
+                    updateToolbar();
+                }
+            });
+        });
     }
 
     function renderTabs() {
