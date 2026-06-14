@@ -52,4 +52,4 @@ Depending on your framework preferences and target Chrome version, you can find 
 
 ## Screenshot
 
-![General view](screenshots/general-view.jpg)
+![General view](interface.jpg)

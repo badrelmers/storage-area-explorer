@@ -1,6 +1,6 @@
 {
     "name": "Storage Area Explorer",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "description": "Simple editor for chrome.storage, localStorage and sessionStorage — no dependencies",
     "devtools_page": "app/html/devtoolsBackground.html",
     "background": {

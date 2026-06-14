@@ -1,5 +1,6 @@
 #### Storage Explorer
-- by Alexey Bykov
+- ?-2026 Alexey Bykov
+- 2026 Badr Elmers
 
 Available for use under the [MIT License](http://en.wikipedia.org/wiki/MIT_License)
 
