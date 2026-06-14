@@ -1,162 +1,136 @@
+/**
+ * htmlStorageHook.js — declared content script (runs automatically on all pages).
+ *
+ * Waits for a {action:"devtools_connect"} message from the background before
+ * creating the port. This avoids spurious connections on pages that are never
+ * inspected, and — critically — fixes the MV3 race condition where the old
+ * executeScript callback fired before the service worker had processed the
+ * hook's onConnect event, causing a ~30-second disconnect/reload loop.
+ */
 (function (chrome) {
-    if (!chrome.runtime) {
-        return;
-    }
-    var runtime = chrome.runtime;
-    var storages = {};
-    var port = runtime.connect({name: "inspected_tab_"});
+    if (!chrome.runtime) { return; }
 
-    storages['localStorage'] = new StorageArea(window.localStorage);
-    storages['sessionStorage'] = new StorageArea(window.sessionStorage);
-    function StorageChange(oldValue, newValue) {
-        this.oldValue = oldValue;
-        this.newValue = newValue;
-    }
+    // ── Web-storage wrapper ───────────────────────────────────────────────────
 
-    function StorageArea(storage) {
-        this.storage = storage;
-    }
+    function StorageArea(storage) { this.storage = storage; }
 
     function applyFunctorPerItem(items, functor) {
         if (typeof items === 'string') {
             functor(items);
-        }
-        if (typeof items === 'object') {
+        } else if (typeof items === 'object') {
             if (Object.prototype.toString.call(items) === '[object Array]') {
-                items.forEach(function (val) {
-                    functor(items[val]);
-                })
+                items.forEach(function (val) { functor(val); });
             } else {
                 for (var key in items) {
-                    if (items.hasOwnProperty(key)) {
-                        functor(key, items[key]);
-                    }
+                    if (items.hasOwnProperty(key)) { functor(key, items[key]); }
                 }
             }
         }
-
     }
 
     StorageArea.prototype.get = function (items, callback) {
-        if (typeof items === 'function') {
-            callback = items;
-            items = null;
-        }
-        var returnItems = {};
-        var storage = this.storage;
+        if (typeof items === 'function') { callback = items; items = null; }
+        var returnItems = {}, storage = this.storage;
         if (items === null || items === undefined) {
             for (var i = 0; i < storage.length; i++) {
-                var key2 = storage.key(i);
-                returnItems[key2] = storage.getItem(key2);
+                var k = storage.key(i);
+                returnItems[k] = storage.getItem(k);
             }
         } else {
-            applyFunctorPerItem(items, function (key) {
-                var storedItem = storage.getItem(key);
-                if (arguments.length === 2 && storedItem === null) {
-                    storedItem = arguments[1];
-                }
-                returnItems[key] = storedItem;
+            applyFunctorPerItem(items, function (key, def) {
+                var v = storage.getItem(key);
+                returnItems[key] = (v === null && def !== undefined) ? def : v;
             });
         }
-
         callback && callback(returnItems);
     };
-
     StorageArea.prototype.set = function (items, callback) {
-        if (typeof items === 'function') {
-            callback = items;
-            items = null;
-        }
+        if (typeof items === 'function') { callback = items; items = null; }
         var storage = this.storage;
-        applyFunctorPerItem(items, function (key, value) {
-            storage.setItem(key, value);
-        });
+        applyFunctorPerItem(items, function (key, value) { storage.setItem(key, value); });
         callback && callback();
     };
-
     StorageArea.prototype.remove = function (items, callback) {
-        if (typeof items === 'function') {
-            callback = items;
-            items = null;
-        }
+        if (typeof items === 'function') { callback = items; items = null; }
         var storage = this.storage;
-        applyFunctorPerItem(items, function (key) {
-            storage.removeItem(key);
-        });
+        applyFunctorPerItem(items, function (key) { storage.removeItem(key); });
         callback && callback();
     };
-
     StorageArea.prototype.clear = function (callback) {
         this.storage.clear();
         callback && callback();
     };
-    StorageArea.prototype.getBytesInUse = function(items,callback){
-        var bytesInUse = 0;
-        if(callback === undefined && typeof items === 'function'){
-            callback = items;
-            items = undefined;
-        }
-        callback && callback(bytesInUse);
+    StorageArea.prototype.getBytesInUse = function (items, callback) {
+        if (typeof items === 'function') { callback = items; }
+        callback && callback(0);
     };
 
+    var storages = {
+        localStorage:  new StorageArea(window.localStorage),
+        sessionStorage: new StorageArea(window.sessionStorage)
+    };
 
-    var frame = document.createElement("iframe");
-    frame.style.display = 'none';
-    document.documentElement.appendChild(frame);
-    frame.contentWindow.addEventListener("storage", function (event) {
-        var type = "";
-        if (event.storageArea === event.currentTarget.localStorage) {
-            type = "localStorage";
-        } else if (event.storageArea === event.currentTarget.sessionStorage) {
-            type = "sessionStorage"
-        } else {
-            console.log("Unknown storage area");
-            return;
-        }
-        var changes = {};
-        if (event.key) {
-            changes[event.key] = {newValue: event.newValue};
-        } else {
-            changes = "clear";
-        }
-        port.postMessage({change: true, type: type, changes: changes});
-    });
-    port.onDisconnect.addListener(function () {
-        document.documentElement.removeChild(frame);
-    })
-
-
-    port.onMessage.addListener(function (message) {
-        if (!message.type || !storages[message.type]) {
-            return;
-        }
-        handleMessage(message, storages[message.type]);
-    });
+    // ── Message handler (storage API calls from the panel) ────────────────────
 
     function handleMessage(message, storage) {
         var method = storage[message.method];
-        var args = [];
-        if (message.args) {
-            message.args.forEach(function (arg) {
-                args.push(arg);
-            });
-        }
+        var args = (message.args || []).slice();
         args.push(function () {
-            var results = [];
-            for (var i = 0; i < arguments.length; i++) {
-                results.push(arguments[i]);
-            }
-            message.results = results;
+            message.results = Array.prototype.slice.call(arguments);
             port.postMessage(message);
         });
         message.meta = {};
         Object.keys(storage).forEach(function (key) {
-            if (typeof storage[key] === 'function') {
-                return;
-            }
-            message.meta[key] = storage[key];
+            if (typeof storage[key] !== 'function') { message.meta[key] = storage[key]; }
         });
         method.apply(storage, args);
     }
+
+    // ── Connect to background (called only when DevTools signals us) ──────────
+
+    var port = null;
+
+    function connect() {
+        if (port) { return; }   // already connected for this DevTools session
+
+        port = chrome.runtime.connect({name: "inspected_tab_"});
+
+        // Iframe trick: lets us observe cross-tab web-storage change events
+        var frame = document.createElement("iframe");
+        frame.style.display = "none";
+        document.documentElement.appendChild(frame);
+
+        frame.contentWindow.addEventListener("storage", function (event) {
+            var type = "";
+            if (event.storageArea === event.currentTarget.localStorage)       type = "localStorage";
+            else if (event.storageArea === event.currentTarget.sessionStorage) type = "sessionStorage";
+            else return;
+            var changes = event.key ? {} : "clear";
+            if (event.key) { changes[event.key] = {newValue: event.newValue}; }
+            port.postMessage({change: true, type: type, changes: changes});
+        });
+
+        port.onDisconnect.addListener(function () {
+            port = null;
+            try { document.documentElement.removeChild(frame); } catch (e) {}
+        });
+
+        port.onMessage.addListener(function (message) {
+            if (!message.type || !storages[message.type]) { return; }
+            handleMessage(message, storages[message.type]);
+        });
+    }
+
+    // ── Wait for the background's signal ─────────────────────────────────────
+    //
+    // The background sends {action:"devtools_connect"} via chrome.tabs.sendMessage
+    // when the DevTools panel opens for this tab. This is orders of magnitude
+    // faster than the previous on-demand executeScript injection.
+
+    chrome.runtime.onMessage.addListener(function (message) {
+        if (message && message.action === "devtools_connect") {
+            connect();
+        }
+    });
 
 })(chrome);

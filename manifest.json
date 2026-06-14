@@ -1,12 +1,20 @@
 {
-    "name": "Storage Area Explorer 2",
-    "version": "1.0.0",
-    "description": "Simple editor for Storage Area for Chrome Packaged Apps & Extensions - new working version",
+    "name": "Storage Area Explorer",
+    "version": "2.0.0",
+    "description": "Simple editor for chrome.storage, localStorage and sessionStorage — no dependencies",
     "devtools_page": "app/html/devtoolsBackground.html",
     "background": {
-        "service_worker": "app/chrome/background.js"
+        "scripts": ["app/chrome/background.js"],
+        "persistent": false
     },
-    "permissions": ["clipboardRead", "clipboardWrite", "scripting"],
-    "host_permissions": ["<all_urls>"],
-    "manifest_version": 3
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["app/chrome/htmlStorageHook.js"],
+            "run_at": "document_idle",
+            "all_frames": false
+        }
+    ],
+    "permissions": ["clipboardRead", "clipboardWrite", "<all_urls>"],
+    "manifest_version": 2
 }
