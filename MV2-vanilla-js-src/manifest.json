@@ -3,6 +3,12 @@
     "version": "3.0.0",
     "description": "Simple editor for chrome.storage, localStorage and sessionStorage — no dependencies",
     "devtools_page": "app/html/devtoolsBackground.html",
+    "icons": {
+      "16":  "icons/logo.png",
+      "32":  "icons/logo.png",
+      "48":  "icons/logo.png",
+      "128": "icons/logo.png"
+    },
     "background": {
         "scripts": ["app/chrome/background.js"],
         "persistent": false
