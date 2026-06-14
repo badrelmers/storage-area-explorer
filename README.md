@@ -14,5 +14,5 @@ Install from latest stable 0.4.3 version from [Chrome Store](https://chrome.goog
 
 Screen shots:
 
-![General view](screenshots/general-view.png)
+![General view](screenshots/general-view.jpg)
 

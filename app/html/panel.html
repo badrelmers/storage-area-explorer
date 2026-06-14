@@ -9,12 +9,13 @@
 
 <div id="connecting-view" class="connecting-state">
     <div class="connecting-dot"></div>
-    <span>Connecting…</span>
+    <span>Connecting to DevTools...</span>
 </div>
 
-<div id="error-view" class="hidden explorer-disabled">
-    <p>Explorer is disabled on normal web pages or extensions without storage permission.</p>
-    <p><a href="#" id="reload-link">↺ Refresh</a></p>
+<div id="error-view" class="hidden explorer-disabled" style="padding: 40px; text-align: center;">
+    <h3 style="margin-top: 0;">Explorer Disabled</h3>
+    <p>Storage Explorer requires standard web pages or extensions with storage permissions.</p>
+    <p><a href="#" id="reload-link" class="btn btn-primary" style="text-decoration: none;">↺ Refresh Connection</a></p>
 </div>
 
 <div id="main-view" class="hidden main">
@@ -28,55 +29,54 @@
         <pre id="import-error-content"></pre>
     </div>
 
-    <!-- List view -->
     <div id="list-view" class="hidden list">
 
         <div class="controls" id="toolbar">
             <button id="btn-add" class="btn btn-primary hidden">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                    <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor">
+                    <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-                Add
+                Add Item
             </button>
 
             <button id="btn-clear" class="btn btn-warning hidden">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
                     <polyline points="2,3 3,3 10,3"/><path d="M4.5,3V2.5a.5.5,0,0,1,.5-.5h2a.5.5,0,0,1,.5.5V3M9.5,3l-.5,7.5h-6L2.5,3"/>
                 </svg>
-                Clear
+                Clear All
             </button>
 
             <div style="flex:1"></div>
 
             <div class="dropdown" id="export-dropdown">
                 <button class="btn dropdown-toggle">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                    <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
                         <path d="M6 1v7M3.5 5.5L6 8l2.5-2.5"/><path d="M1.5 9.5v1h9v-1"/>
                     </svg>
                     Export
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" style="margin-left:2px">
-                        <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+                    <svg width="10" height="10" viewBox="0 0 8 8" fill="currentColor" style="margin-left:4px">
+                        <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
                     </svg>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#" id="export-file"><span class="icon">⬇</span> To File</a></li>
-                    <li><a href="#" id="export-clipboard"><span class="icon">⎘</span> To Clipboard</a></li>
+                    <li><a href="#" id="export-file"><span class="icon">📄</span> Download JSON</a></li>
+                    <li><a href="#" id="export-clipboard"><span class="icon">📋</span> Copy to Clipboard</a></li>
                 </ul>
             </div>
 
             <div class="dropdown hidden" id="import-dropdown">
                 <button class="btn dropdown-toggle">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                    <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
                         <path d="M6 8V1M3.5 5.5L6 3l2.5 2.5" transform="rotate(180,6,4.5)"/><path d="M1.5 9.5v1h9v-1"/>
                     </svg>
                     Import
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" style="margin-left:2px">
-                        <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+                    <svg width="10" height="10" viewBox="0 0 8 8" fill="currentColor" style="margin-left:4px">
+                        <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
                     </svg>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#" id="import-file"><span class="icon">📂</span> From File</a></li>
-                    <li><a href="#" id="import-clipboard"><span class="icon">⎘</span> From Clipboard</a></li>
+                    <li><a href="#" id="import-file"><span class="icon">📂</span> Upload JSON File</a></li>
+                    <li><a href="#" id="import-clipboard"><span class="icon">📋</span> Paste from Clipboard</a></li>
                 </ul>
             </div>
         </div>
@@ -85,33 +85,33 @@
             <table id="storage-table" class="hidden">
                 <thead>
                     <tr>
-                        <th style="width: 30%;">Key</th>
+                        <th style="width: 25%;">Key</th>
                         <th>Value</th>
-                        <th style="width: 70px;"></th> </tr>
+                        <th style="width: 80px; text-align: right;">Actions</th>
+                    </tr>
                 </thead>
                 <tbody id="storage-tbody"></tbody>
             </table>
             <div id="empty-message" class="hidden">
-                <h3>This area is empty</h3>
+                <h3>This storage area is empty</h3>
                 <h4 id="readonly-note" class="hidden">Managed storage is read-only.</h4>
             </div>
         </div>
     </div>
 
-    <!-- Edit / Add view -->
     <div id="edit-view" class="hidden editPanel">
         <div>
-            <div class="edit-label">Key</div>
-            <input id="edit-key" class="key form-control" type="text" placeholder="key name">
+            <div class="edit-label">Storage Key</div>
+            <input id="edit-key" class="key form-control" type="text" placeholder="Enter key name...">
         </div>
         <div id="edit-hint" class="hidden text-info"></div>
         <div id="edit-validation" class="hidden text-warning"></div>
         <div style="display:flex;flex-direction:column;flex:1;min-height:0">
-            <div class="edit-label">Value</div>
-            <textarea id="edit-value" class="value form-control" placeholder="value"></textarea>
+            <div class="edit-label">JSON Value</div>
+            <textarea id="edit-value" class="value form-control" placeholder="Enter JSON value..."></textarea>
         </div>
-        <div class="controls" style="border:none;padding:0">
-            <button id="btn-save" class="btn btn-primary">Save</button>
+        <div class="controls" style="border:none;padding:0;background:transparent;">
+            <button id="btn-save" class="btn btn-primary">Save Changes</button>
             <button id="btn-cancel" class="btn">Cancel</button>
         </div>
     </div>
