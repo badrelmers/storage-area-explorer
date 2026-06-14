@@ -552,6 +552,7 @@
                 el('edit-hint').textContent = 'Value must be valid JSON — strings need double quotes: "example"';
                 show('edit-hint');
             } else {
+                el('edit-hint').textContent = '';
                 hide('edit-hint');
             }
         }
@@ -719,22 +720,26 @@
         var tdAct = document.createElement('td');
         tdAct.style.whiteSpace = 'nowrap';
         if (!desc.readonly) {
+            var actions = document.createElement('div');
+            actions.className = 'row-actions';
+
             var editBtn = document.createElement('button');
-            editBtn.className = 'btn btn-default btn-xs';
+            editBtn.className = 'btn-icon';
             editBtn.title = 'Edit';
-            editBtn.textContent = '✎';
+            editBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9.5 1.5l2 2-7 7-2.5.5.5-2.5 7-7z"/></svg>';
             editBtn.addEventListener('click', function () { openEditMode(result.name); });
 
             var delBtn = document.createElement('button');
-            delBtn.className = 'btn btn-danger btn-xs';
+            delBtn.className = 'btn-icon danger';
             delBtn.title = 'Delete';
-            delBtn.textContent = '✕';
+            delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 3.5h9M5 3.5V2.5h3v1M9.5 3.5l-.5 7h-5l-.5-7"/></svg>';
             delBtn.addEventListener('click', function () {
                 storageRemove(state.currentType, result.name);
             });
 
-            tdAct.appendChild(editBtn);
-            tdAct.appendChild(delBtn);
+            actions.appendChild(editBtn);
+            actions.appendChild(delBtn);
+            tdAct.appendChild(actions);
         }
         tr.appendChild(tdAct);
         return tr;
@@ -1002,10 +1007,27 @@
 
     // ─── Dropdown toggle ──────────────────────────────────────────────────────
 
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown.open').forEach(function (d) {
+            d.classList.remove('open');
+        });
+    }
+
     document.addEventListener('click', function (e) {
+        // Close the dropdown when a menu item inside it is clicked
+        var menuItem = e.target.closest && e.target.closest('.dropdown-menu a');
+        if (menuItem) {
+            var dd = menuItem.closest('.dropdown');
+            if (dd) { dd.classList.remove('open'); }
+            return;  // item's own handler already ran (bubbling order: element → document)
+        }
+
+        // Close any open dropdown when clicking outside it
         document.querySelectorAll('.dropdown.open').forEach(function (d) {
             if (!d.contains(e.target)) { d.classList.remove('open'); }
         });
+
+        // Toggle dropdown on its toggle button
         var toggle = e.target.closest && e.target.closest('.dropdown-toggle');
         if (toggle) {
             e.preventDefault();
