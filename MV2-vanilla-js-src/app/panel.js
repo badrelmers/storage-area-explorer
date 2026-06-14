@@ -455,6 +455,16 @@
                         // chrome.storage.session may return 0 even with data —
                         // estimateBytes() fallback (already used per-item in
                         // refreshStats) keeps the tab header consistent.
+                        //
+                        // NOTE: chrome.storage.local and chrome.storage.session report
+                        // different byte counts for the same data because they use
+                        // different internal serializations:
+                        //   local   → LevelDB + compact JSON text (UTF-8)
+                        //   session → in-memory V8 structured-clone wire format
+                        // The structured-clone format stores per-value type tags and
+                        // can use wider string encodings, so the session count is
+                        // typically ~2× the JSON-equivalent size.  Both numbers are
+                        // accurate for their respective backends.
                         if (bytes === 0 && state.stats[desc.name].count > 0) {
                             var items = obj || {};
                             bytes = Object.keys(items).reduce(function (sum, k) {
@@ -465,7 +475,20 @@
                         renderTabs();
                         updateToolbar();
                     });
+                } else if (desc.stringOnly) {
+                    // window.localStorage / window.sessionStorage: values are always
+                    // plain strings — do NOT pass through JSON.stringify (which would
+                    // add wrapping quotes and inflate the count).
+                    var enc = new TextEncoder();
+                    var items = obj || {};
+                    var bytes = Object.keys(items).reduce(function (sum, k) {
+                        return sum + enc.encode(k + (items[k] != null ? items[k] : '')).length;
+                    }, 0);
+                    state.stats[desc.name].bytesInUse = bytes;
+                    renderTabs();
+                    updateToolbar();
                 } else {
+                    // readonly (e.g. managed): skip byte counting
                     renderTabs();
                     updateToolbar();
                 }
@@ -515,7 +538,20 @@
                 } else {
                     usageDiv.textContent = 'area is empty';
                 }
+            } else if (desc.stringOnly) {
+                // window.localStorage / window.sessionStorage: show estimated byte size
+                // (computed from raw string lengths, not JSON-serialised lengths).
+                var cnt = stats.count || 0;
+                var bytesInUse = stats.bytesInUse || 0;
+                if (bytesInUse > 0) {
+                    usageDiv.textContent = prettyBytes(bytesInUse) + ', ' + cnt + ' item' + (cnt !== 1 ? 's' : '');
+                } else if (cnt > 0) {
+                    usageDiv.textContent = cnt + ' item' + (cnt !== 1 ? 's' : '');
+                } else {
+                    usageDiv.textContent = 'area is empty';
+                }
             } else {
+                // readonly (e.g. managed): show item count only
                 var cnt = stats.count || 0;
                 usageDiv.textContent = cnt > 0 ? cnt + ' items' : 'area is empty';
             }
@@ -651,7 +687,19 @@
                     refreshTableRowBytes(result);
                 });
             });
+        } else if (desc.stringOnly) {
+            // window.localStorage / window.sessionStorage: all values are plain strings.
+            // Do NOT pass through JSON.stringify (adds wrapping quotes → inflated count).
+            var enc = new TextEncoder();
+            var bytes = state.results.reduce(function (sum, r) {
+                var v = r.value != null ? r.value : '';
+                return sum + enc.encode(r.name + v).length;
+            }, 0);
+            state.stats[type].bytesInUse = bytes;
+            renderTabs();
+            updateToolbar();
         } else {
+            // readonly (e.g. managed): no byte counting
             state.stats[type].bytesInUse = 0;
             renderTabs();
             updateToolbar();
