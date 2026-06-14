@@ -18,7 +18,7 @@ function findPort(ports, app, tab) {
 
 function putPort(ports, app, tab, port) {
     if (findPort(ports, app, tab)) {
-        throw new Error("Such port already exist");
+        removePort(ports, app, tab);
     }
     if (app && tab) { ports.app.tab.ports[app + "_" + tab] = port; return; }
     if (tab)        { ports.tab.ports[tab] = port; return; }
@@ -78,8 +78,8 @@ PortManager.prototype.trackUiPort = function (app, tab, port) {
 
 PortManager.prototype.trackTargetPort = function (app, tab, port) {
     if (this.getTargetPort(app, tab)) {
-        port.disconnect();
-        throw new Error("port for " + app + ":" + tab + " already exist");
+        this.getTargetPort(app, tab).disconnect();
+        removePort(this.targetPorts, app, tab);
     }
     if (!this.getUiPort(app, tab)) {
         port.disconnect();
