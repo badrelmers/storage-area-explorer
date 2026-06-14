@@ -65,10 +65,19 @@
         callback && callback(0);
     };
 
-    var storages = {
-        localStorage:  new StorageArea(window.localStorage),
-        sessionStorage: new StorageArea(window.sessionStorage)
-    };
+    var storages = {};
+    // Safely attempt to hook web storage; ignores sandboxed environments
+    try {
+        if (window.localStorage) {
+            storages.localStorage = new StorageArea(window.localStorage);
+        }
+    } catch (e) {}
+
+    try {
+        if (window.sessionStorage) {
+            storages.sessionStorage = new StorageArea(window.sessionStorage);
+        }
+    } catch (e) {}
 
     // ── Message handler (storage API calls from the panel) ────────────────────
 

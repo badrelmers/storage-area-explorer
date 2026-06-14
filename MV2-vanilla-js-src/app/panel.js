@@ -349,12 +349,16 @@
                     }
                 }, TIMEOUT_MS);
 
+
                 chrome.devtools.inspectedWindow.eval(evalCode, function (value, isError) {
                     clearTimeout(timer);
                     if (resolved || stale) { return; }   // already succeeded or superseded
 
                     if (isError) {
-                        if (attempt < MAX_ATTEMPTS) {
+                        // If Chrome explicitly denies permission, stop retrying immediately
+                        var isPermissionDenied = isError.details && isError.details.indexOf('Permission denied') > -1;
+                        
+                        if (attempt < MAX_ATTEMPTS && !isPermissionDenied) {
                             setTimeout(tryEval, 150);
                         } else {
                             reject(isError);
@@ -1123,7 +1127,8 @@
             openPort(appInfo);
             setupTabs(appInfo);
         }, function (err) {
-            console.error('[StorageExplorer] Failed to get app context:', err);
+            // Log as a warning instead of an error. This is expected behavior for restricted pages.
+            console.log('[StorageExplorer] Disabled for this page. Reason:', err.description || 'Permission denied');
             hide('connecting-view');
             show('error-view');
         });

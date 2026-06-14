@@ -13,14 +13,6 @@
         "scripts": ["app/chrome/background.js"],
         "persistent": false
     },
-    "content_scripts": [
-        {
-            "matches": ["<all_urls>"],
-            "js": ["app/chrome/htmlStorageHook.js"],
-            "run_at": "document_idle",
-            "all_frames": false
-        }
-    ],
     "permissions": ["clipboardRead", "clipboardWrite", "<all_urls>"],
     "manifest_version": 2
 }
